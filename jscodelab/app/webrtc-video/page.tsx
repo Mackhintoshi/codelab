@@ -1,0 +1,43 @@
+'use client';
+import JoinMeetingPanel from "@/components/webrtc/JoinMeetingPanel";
+import PreStartVideoPreview from "@/components/webrtc/preStartVideoPreview";
+import Link from "next/link"
+
+import { useState } from "react";
+
+export default function IndexPage() {
+    const [started, setStarted] = useState(false);
+
+    const onStartPeerToPeer = (candidates:RTCIceCandidate[]) => {
+        console.log(candidates)
+    }
+  return (
+    <>
+    <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
+      <div className="flex max-w-[980px] flex-col items-start gap-2">
+        <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
+          Web Rtc Video <br className="hidden sm:inline" />
+          Test Web RTC implementation
+        </h1>
+
+      </div>
+
+    </section>
+
+    
+    {
+        !started?
+        <section className="container grid items-center gap-6 pb-8 pt-6 sm:grid-cols-1 md:grid-cols-2 md:py-10">
+            <div className="flex min-h-[500px] min-w-[60%] max-w-[980px] flex-col items-start gap-2 bg-black">
+                <PreStartVideoPreview/>
+            </div>
+            <div className="flex min-h-[500px] min-w-[40%] max-w-[980px] flex-col items-start gap-2">
+                <JoinMeetingPanel onStartPeerToPeer={onStartPeerToPeer}/>
+            </div>
+        </section>:
+        <></>
+    }
+    
+    </>
+  )
+}
