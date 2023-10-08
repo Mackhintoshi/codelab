@@ -17,6 +17,9 @@ import { DialogClose } from "@radix-ui/react-dialog"
 
 type JoinMeetingPanelProps = {
     onJoinMeeting:(sdp:String,peerName:String)=>void
+    videoStream?:MediaStream
+    audioStream?:MediaStream
+    onError:(error:String)=>void
 }
 
 export default function JoinMeetingModal(props:JoinMeetingPanelProps){
@@ -26,6 +29,10 @@ export default function JoinMeetingModal(props:JoinMeetingPanelProps){
 
 
     const onJoinPeerToPeer = () => {
+        if(props.videoStream === undefined && props.audioStream === undefined){
+            props.onError("Enable at least one of the audio or video streams.")
+            return
+        }
         props.onJoinMeeting(sdp as String,name as String)
     }
 
