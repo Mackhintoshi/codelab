@@ -27,13 +27,9 @@ export default function IndexPage() {
     
     {
         !started?
-        <section className="container grid items-center gap-6 pb-8 pt-6 sm:grid-cols-1 md:grid-cols-2 md:py-10">
-            <div className="flex min-h-[500px] min-w-[60%] max-w-[980px] flex-col items-start gap-2 bg-black">
+        <section className="container grid items-center gap-6 pb-8 pt-6 sm:grid-cols-1 md:grid-cols-1 md:py-10">
                 <PreStartVideoPreview/>
-            </div>
-            <div className="flex min-h-[500px] min-w-[40%] max-w-[980px] flex-col items-start gap-2">
-                <JoinMeetingPanel onStartPeerToPeer={onStartPeerToPeer}/>
-            </div>
+            
         </section>:
         <></>
     }
