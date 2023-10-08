@@ -25,7 +25,11 @@ export default function PreStartVideoPreview() {
 
     const [error, setError] = useState<string|undefined>(undefined)
 
-
+    const playDing = () => {
+        //play a ding to notify the user that the peer has joined and to let browser allow audio
+        const audio = document.getElementById("ding") as HTMLAudioElement
+        audio.play()
+    }
 
     const handleConnection = (event:RTCPeerConnectionIceEvent) => {
         if(event.candidate){
@@ -90,7 +94,17 @@ export default function PreStartVideoPreview() {
         setError(undefined)
         //@ ts-ignore
         if(navigator.mediaDevices.getUserMedia){
-            navigator.mediaDevices.getUserMedia({audio:true}).then((stream)=>{
+            navigator.mediaDevices.getUserMedia({
+                audio:{
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    channelCount: 1,
+                    sampleRate: 8000,
+                    sampleSize: 16
+                }
+                
+            }).then((stream)=>{
                 setAudioStream(stream)
                 setIsAudioEnabled(true)
             }).catch((err)=>{
@@ -114,6 +128,7 @@ export default function PreStartVideoPreview() {
 
     const onStartPeerToPeer = () => {
         setError(undefined)
+        playDing()
         let iceCandidates:RTCIceCandidate[] = []
         let servers = {
             iceServers: [
@@ -136,8 +151,11 @@ export default function PreStartVideoPreview() {
         if(isVideoEnabled){
             peerConnection.addTrack(videoStream?.getVideoTracks()[0] as MediaStreamTrack, videoStream as MediaStream)
         }
-        else{
+        if(isAudioEnabled){
             peerConnection.addTrack(audioStream?.getAudioTracks()[0] as MediaStreamTrack, audioStream as MediaStream)
+            console.log(audioStream?.getAudioTracks())
+            //unmute the audio
+            peerConnection.getTransceivers()[1].direction = "sendrecv"
         }
 
     
@@ -151,6 +169,7 @@ export default function PreStartVideoPreview() {
         })
     }
     const onJoinPeerToPeer = (sdp:String,peerName:String) => {
+        playDing()
         //gets the SDP from joinModal and sets it to the peer remote connection
         //when joining a peer, create a new peer connection
         joinerPeerConnection = new RTCPeerConnection();
@@ -177,6 +196,10 @@ export default function PreStartVideoPreview() {
         if(isAudioEnabled){
             console.log("adding audio track")
             joinerPeerConnection.addTrack(audioStream?.getAudioTracks()[0] as MediaStreamTrack, audioStream as MediaStream)
+            console.log(audioStream?.getAudioTracks())
+            //unmute the audio
+            joinerPeerConnection.getTransceivers()[1].direction = "sendrecv"
+
         }
 
         //add the ice candidates to the peer connection
@@ -208,8 +231,12 @@ export default function PreStartVideoPreview() {
                     let audioTrack = tracks[1].receiver.track
                     //play the audio track
                     const audio = document.getElementById("peerAudio") as HTMLAudioElement
-                    audio.srcObject = new MediaStream([audioTrack])
-                    audio.play()
+                    //create audio stream
+                    let stream = new MediaStream([audioTrack])
+                    console.log(stream)
+                    let ding = document.getElementById("ding") as HTMLAudioElement
+                    ding.srcObject = stream
+                    ding.play()
                 })
             })
         })
@@ -226,6 +253,7 @@ export default function PreStartVideoPreview() {
         console.log("Accepting peer SDP")
         peerConnection.setRemoteDescription(peerSDP).then(()=>{
             console.log("remote description set")
+            //send message to peer
             //get the peer video element
             const video = document.getElementById("peerVideo") as HTMLVideoElement
             //get the tracks from the peer connection
@@ -241,6 +269,8 @@ export default function PreStartVideoPreview() {
             //play the audio track
             const audio = document.getElementById("peerAudio") as HTMLAudioElement
             audio.srcObject = new MediaStream([audioTrack])
+            audio.play()
+
 
         })
     }
@@ -282,37 +312,41 @@ export default function PreStartVideoPreview() {
                     id="webCamVideo"
                     />
                 </div>
-                <div className="position-absolute bottom-0 grid w-full grid-cols-2 items-center
-                bg-black py-5
-                ">
-                    <div className="flex w-full items-center justify-center bg-black">
-                        {
-                            isVideoEnabled?
-                            <BsFillCameraVideoFill 
-                            onClick={stopVideo}
-                            className="text-2xl text-red-500"
-                            />:
-                            <BsFillCameraVideoOffFill
-                            onClick={startVideo}
-                            className="text-2xl text-white"
-                            />
-                        }
-                    </div>
-                    <div className="flex w-full items-center justify-center bg-black">
-                        {
-                            isAudioEnabled?
-                            <AiFillAudio 
-                            onClick={stopAudio}
-                            className="text-2xl text-red-500"
-                            />:
-                            <AiOutlineAudioMuted
-                            onClick={startAudio}
-                            className="text-2xl text-white"
-                            />
-                        }
-                    </div>
-                    
-                </div>
+
+                {
+                    !isStarted?
+                        <div className="position-absolute bottom-0 grid w-full grid-cols-2 items-center
+                        bg-black py-5
+                        ">
+                            <div className="flex w-full items-center justify-center bg-black">
+                                {
+                                    isVideoEnabled?
+                                    <BsFillCameraVideoFill 
+                                    onClick={stopVideo}
+                                    className="text-2xl text-red-500"
+                                    />:
+                                    <BsFillCameraVideoOffFill
+                                    onClick={startVideo}
+                                    className="text-2xl text-white"
+                                    />
+                                }
+                            </div>
+                            <div className="flex w-full items-center justify-center bg-black">
+                                {
+                                    isAudioEnabled?
+                                    <AiFillAudio 
+                                    onClick={stopAudio}
+                                    className="text-2xl text-red-500"
+                                    />:
+                                    <AiOutlineAudioMuted
+                                    onClick={startAudio}
+                                    className="text-2xl text-white"
+                                    />
+                                }
+                            </div>
+                            
+                        </div>:<></>
+                }
                 
                 {
                 error !== undefined?
@@ -368,6 +402,7 @@ export default function PreStartVideoPreview() {
                         }
                 </div>
             </div>
+            <audio id="ding" src="ding.mp3"/>
         </div>
     )
 }
