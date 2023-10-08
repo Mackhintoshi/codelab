@@ -1,63 +1,78 @@
-import { Button } from "../ui/button"
-import adapter from 'webrtc-adapter'
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useState } from "react"
+import { Textarea } from "../ui/textarea"
+import { DialogClose } from "@radix-ui/react-dialog"
+
 
 type JoinMeetingPanelProps = {
-    onStartPeerToPeer:(candidates:RTCIceCandidate[])=>void
+    onJoinMeeting:(sdp:String,peerName:String)=>void
 }
 
-export default function JoinMeetingPanel(props:JoinMeetingPanelProps){
-    let iceCandidates:RTCIceCandidate[] = []
+export default function JoinMeetingModal(props:JoinMeetingPanelProps){
+    
+    const [name, setName] = useState<string|undefined>(undefined)
+    const [sdp, setSdp] = useState<string|undefined>(undefined)
 
-    const handeConnection = (event:RTCPeerConnectionIceEvent) => {
-        console.log(event)
-        if(event.candidate){
-            console.log("candidate connection created")
-            console.log(event.candidate)
-        }
-    }
 
-    const handleConnectionChange = (event:any) => {
-        console.log("connection changed")
-        console.log(event)
+    const onJoinPeerToPeer = () => {
+        props.onJoinMeeting(sdp as String,name as String)
     }
-    const onStartPeerToPeer = () => {
-        //get local connection
-        const servers = {
-            iceServers: [
-                {
-                    urls: "stun:stun.l.google.com:19302"
-                }
-            ]
-        }
-        let peerConnection = new RTCPeerConnection(servers)
-        peerConnection.addEventListener("icecandidate", handeConnection)
-        peerConnection.addEventListener("iceconnectionstatechange", handleConnectionChange)
-        //create offer
-        peerConnection.createOffer().then((offer)=>{
-            //add the offer to local connection
-            peerConnection.setLocalDescription(offer).then(()=>{
-                console.log("offer added to local connection")
-                console.log(peerConnection)
-                
-            })
-        })
-        
-    }
-
-    const onJoinPeerToPeer = () => {}
 
     return (
-        <div className="grid w-full grid-cols-1 gap-6 px-11">
-            <div className="flex flex-col gap-6 px-11">
-                <Button onClick={()=>{onStartPeerToPeer()}}
-                className="w-1/2 border-2 border-green-400 bg-white text-green-500 hover:bg-green-600 hover:text-white"
-                >Start Peer to Peer</Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white">Join Peer to Peer</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Join Peer to Peer</DialogTitle>
+              <DialogDescription>
+                Enter your name and the SDP information from your peer
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  defaultValue="Peer"
+                  value={name}
+                  onChange={(e)=>{setName(e.target.value)}}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="sdp" className="text-right">
+                  SDP
+                </Label>
+                <Textarea
+                    id="sdp"
+                    className="col-span-3"
+                    value={sdp}
+                    onChange={(e)=>{setSdp(e.target.value)}}
+                />
+              </div>
             </div>
-            <div className="flex flex-col gap-6 px-11">
-                <Button 
-                className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white"
-                onClick={()=>{onJoinPeerToPeer()}}>Join Peer to Peer</Button>
-            </div>
-        </div>
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button onClick={onJoinPeerToPeer}>Join</Button>
+                </DialogClose>
+              
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     )
 }
