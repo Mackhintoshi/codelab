@@ -169,7 +169,7 @@ export default function PreStartVideoPreview() {
         })
     }
     const onJoinPeerToPeer = (sdp:String,peerName:String) => {
- 
+        playDing()
         //gets the SDP from joinModal and sets it to the peer remote connection
         //when joining a peer, create a new peer connection
         joinerPeerConnection = new RTCPeerConnection();
@@ -211,7 +211,7 @@ export default function PreStartVideoPreview() {
             console.log("remote description set")
             //create answer
             joinerPeerConnection.createAnswer().then((answer)=>{
-                playDing()
+                
                 //add the answer to the local connection
                 joinerPeerConnection.setLocalDescription(answer).then(()=>{
 
@@ -234,10 +234,8 @@ export default function PreStartVideoPreview() {
                     const audio = document.getElementById("peerAudio") as HTMLAudioElement
                     //create audio stream
                     let stream = new MediaStream([audioTrack])
-                    console.log(stream)
-                    let ding = document.getElementById("ding") as HTMLAudioElement
-                    ding.srcObject = stream
-                    ding.play()
+                    audio.srcObject = stream
+                    audio.play()
                 })
             })
         })
