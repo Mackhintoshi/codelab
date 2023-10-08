@@ -169,26 +169,26 @@ export default function PreStartVideoPreview() {
         })
     }
     const onJoinPeerToPeer = (sdp:String,peerName:String) => {
-        playDing()
+ 
         //gets the SDP from joinModal and sets it to the peer remote connection
         //when joining a peer, create a new peer connection
         joinerPeerConnection = new RTCPeerConnection();
-        joinerPeerConnection.addEventListener("icecandidate", (event)=>{
-            if(event.candidate){
-                //get the public candidate IP
-                console.log("JOINER Connection created")
-                setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
-        }})
-        joinerPeerConnection.addEventListener("iceconnectionstatechange", (event)=>{
-            console.log("JOINER CONNECTION CHANGED. Update SDP")
-            console.log(event)
-            //get the new SDP
-            setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
-        })
+        // joinerPeerConnection.addEventListener("icecandidate", (event)=>{
+        //     if(event.candidate){
+        //         //get the public candidate IP
+        //         console.log("JOINER Connection created")
+        //         setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
+        // }})
+        // joinerPeerConnection.addEventListener("iceconnectionstatechange", (event)=>{
+        //     console.log("JOINER CONNECTION CHANGED. Update SDP")
+        //     console.log(event)
+        //     //get the new SDP
+        //     setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
+        // })
         //add event listener when the host accepts the peer
-        joinerPeerConnection.addEventListener("message", (message)=>{
-            console.log(message)
-        })
+        // joinerPeerConnection.addEventListener("message", (message)=>{
+        //     console.log(message)
+        // })
         //attach the media
         if(isVideoEnabled){
             joinerPeerConnection.addTrack(videoStream?.getVideoTracks()[0] as MediaStreamTrack, videoStream as MediaStream)
@@ -211,6 +211,7 @@ export default function PreStartVideoPreview() {
             console.log("remote description set")
             //create answer
             joinerPeerConnection.createAnswer().then((answer)=>{
+                playDing()
                 //add the answer to the local connection
                 joinerPeerConnection.setLocalDescription(answer).then(()=>{
 
@@ -264,12 +265,19 @@ export default function PreStartVideoPreview() {
             video.play()
             setIsStarted(true)
             //get the audio track
-            console.log(tracks)
-            let audioTrack = tracks[1].receiver.track
-            //play the audio track
-            const audio = document.getElementById("peerAudio") as HTMLAudioElement
-            audio.srcObject = new MediaStream([audioTrack])
-            audio.play()
+            try{
+                console.log(tracks)
+                let audioTrack = tracks[1].receiver.track
+                //play the audio track
+                const audio = document.getElementById("peerAudio") as HTMLAudioElement
+                audio.srcObject = new MediaStream([audioTrack])
+                audio.play()
+                return;
+            }catch(e){
+                console.log(e)
+                return;
+            }
+            
 
 
         })
