@@ -1,9 +1,8 @@
 'use client';
-import JoinMeetingPanel from "@/components/webrtc/JoinMeetingPanel";
-import PreStartVideoPreview from "@/components/webrtc/preStartVideoPreview";
 import Link from "next/link"
 
 import { useState } from "react";
+import PreStartVideoPreview from "./components/preStartVideoPreview";
 
 export default function IndexPage() {
     const [started, setStarted] = useState(false);

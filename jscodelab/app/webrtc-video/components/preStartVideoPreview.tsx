@@ -2,16 +2,21 @@
 import { useEffect, useState } from "react";
 import { BsFillCameraVideoFill, BsFillCameraVideoOffFill } from "react-icons/bs";
 import { AiFillAudio, AiOutlineAudioMuted } from "react-icons/ai";
-import { Button } from "../ui/button";
-import { Textarea } from "../ui/textarea";
+import { Button } from "../../../components/ui/button";
+import { Textarea } from "../../../components/ui/textarea";
 import JoinMeetingModal from "./JoinMeetingPanel";
+import { STUN_SERVERS } from "../scripts/MeetingParticipant";
+import MeetingHost from "../scripts/meetingHost";
+import MeetingJoiner from "../scripts/MeetingJoiner";
+import { join } from "path";
 
 
 
-
-let iceCandidates:RTCIceCandidate[] = []
-let peerConnection:RTCPeerConnection;
-let joinerPeerConnection:RTCPeerConnection;
+let host:MeetingHost|undefined = undefined
+let hostSDPText:String|undefined = undefined
+let isHost = false
+let joiner:MeetingJoiner|undefined = undefined
+let joinerSDPText:String|undefined = undefined
 
 export default function PreStartVideoPreview() {
     const [isVideoEnabled, setIsVideoEnabled] = useState(false)
@@ -25,39 +30,109 @@ export default function PreStartVideoPreview() {
 
     const [error, setError] = useState<string|undefined>(undefined)
 
+
+    //HOST
+    const onStartHosting = () => {
+        isHost = true;
+        host = new MeetingHost({
+            STUN_SERVERS:[STUN_SERVERS.GOOGLE],
+            onConnect:onHostConnect,
+            onDisconnect:onHostDisconnect,
+            onConnectionChange:onHostConnectionChange,
+            audioStream:audioStream as MediaStream,
+            videoStream:videoStream as MediaStream,
+            onBothConnected:onBothConnected
+        })
+        setIsStarted(true)
+    }
+
+    const onHostConnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
+        setError(undefined)
+        playDing();
+        hostSDPText = JSON.stringify(peerConnection.localDescription)
+        //TODO: replace this with a websocket
+        setSdpText(hostSDPText as string)
+    }
+
+    const onHostDisconnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection|undefined) => {
+
+    }
+
+    const onHostConnectionChange = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
+        console.log("HOST CONNECTION CHANGED. Update SDP")
+        hostSDPText = JSON.stringify(peerConnection.localDescription)
+        //TODO: replace this with a websocket
+        setSdpText(hostSDPText as string)
+    }
+
+    const onSaveJoiningPeerSDP = () => {
+        //gets the peer sdp from the text area and sets it to the peer remote connection
+        const peerSDP = JSON.parse(peerSDPText as string)
+        console.log("Accepting peer SDP")
+        host?.acceptJoinRequest(peerSDP as RTCSessionDescriptionInit,"Peer")
+    }
+
+
+
+    //JOINER
+     const JoinPeerToPeer = (sdp:String,peerName:String) => {
+        console.log("Joining peer to peer")
+        isHost = false;
+        joiner = new MeetingJoiner({
+            STUN_SERVERS:[STUN_SERVERS.GOOGLE],
+            onConnect:onJoinerConnect,
+            onDisconnect:onJoinerDisconnect,
+            onConnectionChange:onJoinerConnectionChange,
+            audioStream:audioStream as MediaStream,
+            videoStream:videoStream as MediaStream,
+            onAnswer:onAnswer,
+            onBothConnected:onBothConnected
+        })
+        joiner.join(JSON.parse(sdp as string),peerName as string)
+        setIsStarted(true);
+     }
+
+    const onJoinerConnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
+        setError(undefined)
+        playDing();
+        joinerSDPText = JSON.stringify(peerConnection.localDescription)
+        setPeerSDPText(joinerSDPText as string)
+    }
+
+    const onJoinerDisconnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection|undefined) => {
+
+    }
+    const onJoinerConnectionChange = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
+        console.log("JOINER CONNECTION CHANGED. Update SDP")
+        joinerSDPText = JSON.stringify(peerConnection.localDescription)
+        setPeerSDPText(joinerSDPText as string)
+    }
+
+    const onAnswer = (answerSDP:any, peerConnection: RTCPeerConnection) => {
+        joinerSDPText = JSON.stringify(peerConnection.localDescription)
+        setPeerSDPText(joinerSDPText as string)
+    }
+
     const playDing = () => {
         //play a ding to notify the user that the peer has joined and to let browser allow audio
         const audio = document.getElementById("ding") as HTMLAudioElement
         audio.play()
     }
 
-    const handleConnection = (event:RTCPeerConnectionIceEvent) => {
-        if(event.candidate){
-            //get the public candidate IP
-            console.log("candidate connection created")
-            let publicIp = event.candidate.address
-            let port = event.candidate.port
-            console.log(`public ip: ${publicIp}:${port}`)
-            //todo: send candidate to message broker
-            //for now, get the candidates in an array to be given to the peer connection
-            let iceCandidate = new RTCIceCandidate(event.candidate)
-            iceCandidates.push(iceCandidate)
-            // get the local description
-            setSdpText(JSON.stringify(peerConnection.localDescription))
 
-        }
+    //ON BOTH CONNECTED EVENTS
+    const onBothConnected = (audioTrack: MediaStreamTrack, videoTrack: MediaStreamTrack) => {
+        console.log("Both connected");
+        //add the tracks to the audio and video element
+        let peerVideo = document.getElementById("peerVideo") as HTMLVideoElement
+        let peerAudio = document.getElementById("peerAudio") as HTMLAudioElement
+        peerVideo.srcObject = new MediaStream([videoTrack])
+        peerVideo.play()
+        peerAudio.srcObject = new MediaStream([audioTrack])
+        peerAudio.play()
     }
-    
-    const handleConnectionChange = (event:any) => {
-        console.log("CONNECTION CHANGED. Update SDP")
-        console.log(event)
-        //get the new SDP
-        setSdpText(JSON.stringify(peerConnection.localDescription))
-    }
-
-    const onMessageReceived = (message:any) => {
-        console.log(message)
-    }
+    //OLD
+    //TODO when starting video, replace the streams in the peer connection
 
     const startVideo = () => {
         setError(undefined)
@@ -124,161 +199,6 @@ export default function PreStartVideoPreview() {
         if(!isVideoEnabled){
             setAudioStream(undefined)
         }
-    }
-
-    const onStartPeerToPeer = () => {
-        setError(undefined)
-        playDing()
-        let iceCandidates:RTCIceCandidate[] = []
-        let servers = {
-            iceServers: [
-                {
-                    urls: "stun:stun.l.google.com:19302"
-                }
-            ]
-        }
-        peerConnection = new RTCPeerConnection(servers);
-        peerConnection.addEventListener("icecandidate", handleConnection)
-        peerConnection.addEventListener("iceconnectionstatechange", handleConnectionChange)
-        peerConnection.addEventListener("message", onMessageReceived)
-        
-        if(!isVideoEnabled && !isAudioEnabled){
-            setTimeout(()=>{
-                setError("Video or Audio should be enabled to continue");
-                }, 200)
-                return;
-        }
-        if(isVideoEnabled){
-            peerConnection.addTrack(videoStream?.getVideoTracks()[0] as MediaStreamTrack, videoStream as MediaStream)
-        }
-        if(isAudioEnabled){
-            peerConnection.addTrack(audioStream?.getAudioTracks()[0] as MediaStreamTrack, audioStream as MediaStream)
-            console.log(audioStream?.getAudioTracks())
-            //unmute the audio
-            peerConnection.getTransceivers()[1].direction = "sendrecv"
-        }
-
-    
-        //create offer
-        peerConnection.createOffer().then((offer)=>{
-            //add the offer to local connection
-            peerConnection.setLocalDescription(offer).then(()=>{
-                console.log("offer added to local connection")
-            })
-
-        })
-    }
-    const onJoinPeerToPeer = (sdp:String,peerName:String) => {
-        playDing()
-        //gets the SDP from joinModal and sets it to the peer remote connection
-        //when joining a peer, create a new peer connection
-        joinerPeerConnection = new RTCPeerConnection();
-        // joinerPeerConnection.addEventListener("icecandidate", (event)=>{
-        //     if(event.candidate){
-        //         //get the public candidate IP
-        //         console.log("JOINER Connection created")
-        //         setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
-        // }})
-        // joinerPeerConnection.addEventListener("iceconnectionstatechange", (event)=>{
-        //     console.log("JOINER CONNECTION CHANGED. Update SDP")
-        //     console.log(event)
-        //     //get the new SDP
-        //     setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
-        // })
-        //add event listener when the host accepts the peer
-        // joinerPeerConnection.addEventListener("message", (message)=>{
-        //     console.log(message)
-        // })
-        //attach the media
-        if(isVideoEnabled){
-            joinerPeerConnection.addTrack(videoStream?.getVideoTracks()[0] as MediaStreamTrack, videoStream as MediaStream)
-        }
-        if(isAudioEnabled){
-            console.log("adding audio track")
-            joinerPeerConnection.addTrack(audioStream?.getAudioTracks()[0] as MediaStreamTrack, audioStream as MediaStream)
-            console.log(audioStream?.getAudioTracks())
-            //unmute the audio
-            joinerPeerConnection.getTransceivers()[1].direction = "sendrecv"
-
-        }
-
-        //add the ice candidates to the peer connection
-        iceCandidates.forEach((candidate)=>{
-            joinerPeerConnection.addIceCandidate(candidate)
-        })
-        //set this SDP as the remote description
-        joinerPeerConnection.setRemoteDescription(JSON.parse(sdp as string)).then(()=>{
-            console.log("remote description set")
-            //create answer
-            joinerPeerConnection.createAnswer().then((answer)=>{
-                
-                //add the answer to the local connection
-                joinerPeerConnection.setLocalDescription(answer).then(()=>{
-
-                    console.log("answer added to local connection")
-                    //get the local description
-                    setPeerSDPText(JSON.stringify(joinerPeerConnection.localDescription))
-                    //get the peer video element
-                    const video = document.getElementById("peerVideo") as HTMLVideoElement
-                    //get the tracks from the peer connection
-                    let tracks = joinerPeerConnection.getTransceivers()
-                    console.log(tracks[0].receiver.track)
-                    //add the tracks to the video element
-                    video.srcObject = new MediaStream([tracks[0].receiver.track])
-                    video.play()
-                    setIsStarted(true)
-                    //get the audio track
-                    console.log(tracks)
-                    let audioTrack = tracks[1].receiver.track
-                    //play the audio track
-                    const audio = document.getElementById("peerAudio") as HTMLAudioElement
-                    //create audio stream
-                    let stream = new MediaStream([audioTrack])
-                    audio.srcObject = stream
-                    audio.play()
-                })
-            })
-        })
-        
-
-       
-
-    }
-
-    const onSaveJoiningPeerSDP = () => {
-        //gets the peer sdp from the text area and sets it to the peer remote connection
-
-        const peerSDP = JSON.parse(peerSDPText as string)
-        console.log("Accepting peer SDP")
-        peerConnection.setRemoteDescription(peerSDP).then(()=>{
-            console.log("remote description set")
-            //send message to peer
-            //get the peer video element
-            const video = document.getElementById("peerVideo") as HTMLVideoElement
-            //get the tracks from the peer connection
-            let tracks = peerConnection.getTransceivers()
-            console.log(tracks[0].receiver.track)
-            //add the tracks to the video element
-            video.srcObject = new MediaStream([tracks[0].receiver.track])
-            video.play()
-            setIsStarted(true)
-            //get the audio track
-            try{
-                console.log(tracks)
-                let audioTrack = tracks[1].receiver.track
-                //play the audio track
-                const audio = document.getElementById("peerAudio") as HTMLAudioElement
-                audio.srcObject = new MediaStream([audioTrack])
-                audio.play()
-                return;
-            }catch(e){
-                console.log(e)
-                return;
-            }
-            
-
-
-        })
     }
 
     useEffect(()=>{
@@ -371,12 +291,13 @@ export default function PreStartVideoPreview() {
                     !isStarted?
                     <>
                         <div className="flex flex-col justify-center gap-6 text-center">
-                            <Button onClick={()=>{onStartPeerToPeer()}}
+                            <Button onClick={onStartHosting}
                             className="w-1/2 border-2 border-green-400 bg-white text-green-500 hover:bg-green-600 hover:text-white"
                             >Start Peer to Peer</Button>
                         </div>
                         <div className="flex flex-col justify-center gap-6 text-center ">
-                            <JoinMeetingModal onJoinMeeting={onJoinPeerToPeer} videoStream={videoStream} audioStream={audioStream} onError={(e)=>{setError(e as string)}}/>
+                            <JoinMeetingModal onJoinMeeting={JoinPeerToPeer}
+                               videoStream={videoStream} audioStream={audioStream} onError={(e)=>{setError(e as string)}}/>
                         </div>
                     </>:<></>
                 }
@@ -400,7 +321,9 @@ export default function PreStartVideoPreview() {
                                 sdpText !== undefined?
                                 <Button
                                 className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white"
-                                onClick={()=>{onSaveJoiningPeerSDP()}}>Save Peer SDP</Button>
+                                onClick={()=>{
+                                    onSaveJoiningPeerSDP()
+                                }}>Save Peer SDP</Button>
                                 :<></>
                             }
                         
