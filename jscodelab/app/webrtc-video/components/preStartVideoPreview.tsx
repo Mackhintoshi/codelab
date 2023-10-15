@@ -8,15 +8,16 @@ import JoinMeetingModal from "./JoinMeetingPanel";
 import { STUN_SERVERS } from "../scripts/MeetingParticipant";
 import MeetingHost from "../scripts/meetingHost";
 import MeetingJoiner from "../scripts/MeetingJoiner";
-import { join } from "path";
+import { kv } from "@vercel/kv";
 
 
 
 let host:MeetingHost|undefined = undefined
-let hostSDPText:String|undefined = undefined
+let hostSDPText:string|undefined = undefined
 let isHost = false
 let joiner:MeetingJoiner|undefined = undefined
-let joinerSDPText:String|undefined = undefined
+let joinerSDPText:string|undefined = undefined
+let roomName:string|undefined = undefined
 
 export default function PreStartVideoPreview() {
     const [isVideoEnabled, setIsVideoEnabled] = useState(false)
@@ -27,6 +28,7 @@ export default function PreStartVideoPreview() {
 
     const [sdpText, setSdpText] = useState<string|undefined>(undefined)
     const [peerSDPText, setPeerSDPText] = useState<string|undefined>(undefined)
+    const [currentRoomName, setCurrentRoomName] = useState<string|undefined>(undefined)
 
     const [error, setError] = useState<string|undefined>(undefined)
 
@@ -44,6 +46,7 @@ export default function PreStartVideoPreview() {
             onBothConnected:onBothConnected
         })
         setIsStarted(true)
+        
     }
 
     const onHostConnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
@@ -52,6 +55,14 @@ export default function PreStartVideoPreview() {
         hostSDPText = JSON.stringify(peerConnection.localDescription)
         //TODO: replace this with a websocket
         setSdpText(hostSDPText as string)
+        roomName = (Math.floor(Math.random() * 10000000) + 100000).toString();
+        //store to vercel kv
+        let sdp = hostSDPText
+        kv.hset(roomName,{sdp:sdp,peerName:"host"})
+        //expire in 2 hours
+        kv.setex(roomName.toString(),7200,{sdp:sdp,peerName:"host"})
+        setCurrentRoomName(roomName)
+        
     }
 
     const onHostDisconnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection|undefined) => {
@@ -310,6 +321,14 @@ export default function PreStartVideoPreview() {
                         <p className="text-center text-gray-500">Give this SDP Information to your peer</p>
                         <Textarea className="min-h-30vh w-full" value={sdpText} onChange={(e)=>{setSdpText(e.target.value)}}
                         />
+                        </>:<></>
+                    }
+                    {
+                        //show a code snippet of the SDP information to be sent to the other peer
+                        currentRoomName !== undefined?
+                        <>
+                        <p className="text-center text-gray-500">Room Name</p>
+                        <p className="text-center text-gray-500">{currentRoomName}</p>
                         </>:<></>
                     }
                     {peerSDPText !== undefined ||sdpText !==undefined ?
