@@ -8,8 +8,10 @@ import JoinMeetingModal from "./JoinMeetingPanel";
 import { STUN_SERVERS } from "../scripts/MeetingParticipant";
 import MeetingHost from "../scripts/meetingHost";
 import MeetingJoiner from "../scripts/MeetingJoiner";
-import { kv } from "@vercel/kv";
+import io from 'socket.io-client';
+import { Socket } from "socket.io-client";
 
+const apiURL = process.env.NEXT_PUBLIC_API_URL
 
 
 let host:MeetingHost|undefined = undefined
@@ -18,6 +20,7 @@ let isHost = false
 let joiner:MeetingJoiner|undefined = undefined
 let joinerSDPText:string|undefined = undefined
 let roomName:string|undefined = undefined
+let socket:Socket|undefined = undefined
 
 export default function PreStartVideoPreview() {
     const [isVideoEnabled, setIsVideoEnabled] = useState(false)
@@ -25,12 +28,52 @@ export default function PreStartVideoPreview() {
     const [isAudioEnabled, setIsAudioEnabled] = useState(false)
     const [audioStream, setAudioStream] = useState<MediaStream|undefined>(undefined)
     const [isStarted, setIsStarted] = useState(false)
-
-    const [sdpText, setSdpText] = useState<string|undefined>(undefined)
     const [peerSDPText, setPeerSDPText] = useState<string|undefined>(undefined)
-    const [currentRoomName, setCurrentRoomName] = useState<string|undefined>(undefined)
+    const [currentRoomName, setCurrentRoomName] = useState<string|undefined>(roomName)
+    const [isUserHost, setIsUserHost] = useState<boolean|undefined>(undefined)
 
     const [error, setError] = useState<string|undefined>(undefined)
+
+
+    const saveRoomDetails = (roomName:string,sdp:string) => {
+        const url = apiURL+"/room"
+        const data = {
+            room_name:roomName,
+            host_sdp_text:sdp,
+            host:"Meeting Host"
+        }
+        fetch(url,{
+            method:"PUT",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            credentials: "include",
+            body:JSON.stringify(data)
+        }).then((res)=>{
+            if(res.ok){
+                return res.json()
+            }else{
+                throw new Error("Unable to save room details")
+            }
+        }).then((data)=>{
+            setCurrentRoomName(roomName)
+            connectSocket()
+        }).catch((err)=>{
+            console.log(err)
+            setError("Unable to save room details")
+        })
+
+         
+    }
+
+    const connectSocket = () => {
+        let host = process.env.NEXT_PUBLIC_API_HOST +"/room-ws"
+        socket = io(host!,{})
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket');
+          });
+
+    }
 
 
     //HOST
@@ -46,22 +89,21 @@ export default function PreStartVideoPreview() {
             onBothConnected:onBothConnected
         })
         setIsStarted(true)
+        setIsUserHost(true)
+        
         
     }
 
     const onHostConnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
+        
         setError(undefined)
         playDing();
         hostSDPText = JSON.stringify(peerConnection.localDescription)
-        //TODO: replace this with a websocket
-        setSdpText(hostSDPText as string)
-        roomName = (Math.floor(Math.random() * 10000000) + 100000).toString();
-        //store to vercel kv
-        let sdp = hostSDPText
-        kv.hset(roomName,{sdp:sdp,peerName:"host"})
-        //expire in 2 hours
-        kv.setex(roomName.toString(),7200,{sdp:sdp,peerName:"host"})
-        setCurrentRoomName(roomName)
+        if(roomName === undefined){
+            roomName = (Math.floor(Math.random() * 10000000) + 100000).toString();
+        }
+        saveRoomDetails(roomName,hostSDPText)
+        
         
     }
 
@@ -72,8 +114,29 @@ export default function PreStartVideoPreview() {
     const onHostConnectionChange = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
         console.log("HOST CONNECTION CHANGED. Update SDP")
         hostSDPText = JSON.stringify(peerConnection.localDescription)
-        //TODO: replace this with a websocket
-        setSdpText(hostSDPText as string)
+        //update api
+        let url = apiURL+"/room/"+roomName
+        let data = {
+            host_sdp_text:hostSDPText
+        }
+        fetch(url,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            credentials: "include",
+            body:JSON.stringify(data)
+        }).then((res)=>{
+            if(res.ok){
+                return res.json()
+            }else{
+                throw new Error("Unable to update room details")
+            }
+        }).catch((err)=>{
+            console.log(err)
+            setError("Unable to update room details")
+        })
+       
     }
 
     const onSaveJoiningPeerSDP = () => {
@@ -86,7 +149,7 @@ export default function PreStartVideoPreview() {
 
 
     //JOINER
-     const JoinPeerToPeer = (sdp:String,peerName:String) => {
+     const JoinPeerToPeer = (joinedRoomName:string,sdp:String,peerName:String) => {
         console.log("Joining peer to peer")
         isHost = false;
         joiner = new MeetingJoiner({
@@ -100,6 +163,32 @@ export default function PreStartVideoPreview() {
             onBothConnected:onBothConnected
         })
         joiner.join(JSON.parse(sdp as string),peerName as string)
+        //update room details with guest_sdp_text and guest name
+        let url = apiURL+"/room/join"
+        console.log(peerName)
+        let data = {
+            room_name:joinedRoomName,
+            guest:peerName,
+            guest_sdp_text:sdp,
+            
+        }
+        fetch(url,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            credentials: "include",
+            body:JSON.stringify(data)
+        }).then((res)=>{
+            if(res.ok){
+                return res.json()
+            }else{
+                throw new Error("Unable to update room details")
+            }
+        }).catch((err)=>{
+            console.log(err)
+            setError("Unable to update room details")
+        })
         setIsStarted(true);
      }
 
@@ -142,7 +231,28 @@ export default function PreStartVideoPreview() {
         peerAudio.srcObject = new MediaStream([audioTrack])
         peerAudio.play()
     }
-    //OLD
+
+    //temporay while we do not have websocket - get new sdp manually
+    const getJoinerSDP = () => {
+        let url = apiURL+"/room/"+roomName
+        fetch(url).then((response)=>{
+            if(response.ok){
+                return response.json()
+            }else{
+                throw new Error("Unable to get room details")
+            }
+        }).then((data)=>{
+            console.log(data)
+            if(data.guest_sdp_text === undefined){
+                setError("No peer has joined yet")
+            }
+            const peerSDP = JSON.parse(data.guest_sdp_text)
+            console.log("Accepting peer SDP")
+            host?.acceptJoinRequest(peerSDP as RTCSessionDescriptionInit,"Peer")
+        }).catch((error)=>{
+            setError("No peer has joined yet")
+        })
+    }
     //TODO when starting video, replace the streams in the peer connection
 
     const startVideo = () => {
@@ -211,6 +321,7 @@ export default function PreStartVideoPreview() {
             setAudioStream(undefined)
         }
     }
+
 
     useEffect(()=>{
         startVideo()
@@ -316,37 +427,20 @@ export default function PreStartVideoPreview() {
                 <div className="flex flex-col justify-center gap-6 text-center ">
                     {
                         //show a code snippet of the SDP information to be sent to the other peer
-                        sdpText !== undefined?
-                        <>
-                        <p className="text-center text-gray-500">Give this SDP Information to your peer</p>
-                        <Textarea className="min-h-30vh w-full" value={sdpText} onChange={(e)=>{setSdpText(e.target.value)}}
-                        />
-                        </>:<></>
-                    }
-                    {
-                        //show a code snippet of the SDP information to be sent to the other peer
                         currentRoomName !== undefined?
                         <>
-                        <p className="text-center text-gray-500">Room Name</p>
+                        <p className="text-center text-red-500">Room Name</p>
                         <p className="text-center text-gray-500">{currentRoomName}</p>
                         </>:<></>
                     }
-                    {peerSDPText !== undefined ||sdpText !==undefined ?
+                    { isUserHost?
                         <>
-                        <p className="text-center text-gray-500">Paste the SDP Information from/to your peer</p>
-                            <Textarea className="min-h-30vh w-full" value={peerSDPText} onChange={(e)=>{setPeerSDPText(e.target.value)}}/>
-                            {
-                                //hide this button if user is the peer that joins
-                                sdpText !== undefined?
-                                <Button
-                                className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white"
-                                onClick={()=>{
-                                    onSaveJoiningPeerSDP()
-                                }}>Save Peer SDP</Button>
-                                :<></>
-                            }
-                        
-                        </>:<></>
+                         <Button
+                            className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white"
+                            onClick={()=>{
+                                getJoinerSDP()
+                            }}>Refresh</Button>
+                       </>:<></>
                         }
                 </div>
             </div>

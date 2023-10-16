@@ -16,7 +16,7 @@ import { DialogClose } from "@radix-ui/react-dialog"
 
 
 type JoinMeetingPanelProps = {
-    onJoinMeeting:(sdp:String,peerName:String)=>void
+    onJoinMeeting:(roomName:string,sdp:String,peerName:String)=>void
     videoStream?:MediaStream
     audioStream?:MediaStream
     onError:(error:String)=>void
@@ -24,17 +24,38 @@ type JoinMeetingPanelProps = {
 
 export default function JoinMeetingModal(props:JoinMeetingPanelProps){
     
-    const [name, setName] = useState<string|undefined>(undefined)
+    const [name, setName] = useState<string|undefined>("Peer")
     const [sdp, setSdp] = useState<string|undefined>(undefined)
+    const [roomName, setRoomName] = useState<string|undefined>(undefined)
 
-
-    const onJoinPeerToPeer = () => {
-        if(props.videoStream === undefined && props.audioStream === undefined){
-            props.onError("Enable at least one of the audio or video streams.")
-            return
+    const getMeetingInfo = ()=>{
+      if(roomName === undefined){
+        props.onError("Enter a room name")
+        return
+      }
+      if(props.videoStream === undefined && props.audioStream === undefined){
+        props.onError("Enable at least one of the audio or video streams.")
+        return
+      }
+      //get meeting info using room name
+      const url = process.env.NEXT_PUBLIC_API_URL + "/room/"+roomName
+      fetch(url).then((response)=>{
+        if(response.ok){
+          return response.json()
+        }else{
+          props.onError("Error getting meeting info")
         }
-        props.onJoinMeeting(sdp as String,name as String)
+      }).then((data)=>{
+        console.log(data)
+        //send room name details to parent
+        props.onJoinMeeting(roomName,data.host_sdp_text,name as String)
+        
+      }).catch((error)=>{
+        props.onError(error.message)
+      })
+
     }
+
 
     return (
         <Dialog>
@@ -63,19 +84,19 @@ export default function JoinMeetingModal(props:JoinMeetingPanelProps){
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="sdp" className="text-right">
-                  SDP
+                  Room ID
                 </Label>
-                <Textarea
-                    id="sdp"
-                    className="col-span-3"
-                    value={sdp}
-                    onChange={(e)=>{setSdp(e.target.value)}}
+                <Input
+                  id="sdp"
+                  value={roomName}
+                  onChange={(e)=>{setRoomName(e.target.value)}}
+                  className="col-span-3"
                 />
               </div>
             </div>
             <DialogFooter>
                 <DialogClose asChild>
-                    <Button onClick={onJoinPeerToPeer}>Join</Button>
+                    <Button onClick={getMeetingInfo}>Join</Button>
                 </DialogClose>
               
             </DialogFooter>

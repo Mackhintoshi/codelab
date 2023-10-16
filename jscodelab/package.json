@@ -26,6 +26,7 @@
     "react-dom": "^18.2.0",
     "react-icons": "^4.11.0",
     "sharp": "^0.31.3",
+    "socket.io-client": "^4.7.2",
     "tailwind-merge": "^1.13.2",
     "tailwindcss-animate": "^1.0.6",
     "webrtc-adapter": "^8.2.3"
