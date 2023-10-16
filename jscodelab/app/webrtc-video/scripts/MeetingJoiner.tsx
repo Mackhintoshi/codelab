@@ -17,10 +17,12 @@ export default class MeetingJoiner extends MeetingParticipant implements iMeetin
 
    private createAnswer() {
     this.peerConnection?.createAnswer().then((answer) => {
-        this.peerConnection?.setLocalDescription(answer);
-        console.log("answer created", answer)
-        this.onJoined(answer,this.peerConnection as RTCPeerConnection,this.peerName)
-        this.onBothConnectedEvent()
+        this.peerConnection?.setLocalDescription(answer).then(() => {
+            console.log("answer created", answer)
+            this.onJoined(answer,this.peerConnection as RTCPeerConnection,this.peerName)
+            this.onBothConnectedEvent()
+        });
+        
     });
     }
 
