@@ -15,7 +15,7 @@ def after_request(response):
     :param response: Flask response object
     """
     #allow all
-    white_origin= ['http://127.0.0.1:3000','http://localhost','http://localhost:3000',"null",]
+    white_origin= ['http://127.0.0.1:3000','http://localhost','http://localhost:3000',"null","https://codelab-eight.vercel.app"]
     if 'HTTP_ORIGIN' in request.environ and request.environ['HTTP_ORIGIN']  in white_origin:
         response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
         response.headers['Access-Control-Allow-Methods'] = 'PUT,GET,POST,DELETE'

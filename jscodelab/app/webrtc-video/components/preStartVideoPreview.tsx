@@ -57,7 +57,6 @@ export default function PreStartVideoPreview() {
             }
         }).then((data)=>{
             setCurrentRoomName(roomName)
-            connectSocket()
         }).catch((err)=>{
             console.log(err)
             setError("Unable to save room details")
@@ -66,14 +65,6 @@ export default function PreStartVideoPreview() {
          
     }
 
-    const connectSocket = () => {
-        let host = process.env.NEXT_PUBLIC_API_HOST +"/room-ws"
-        socket = io(host!,{})
-        socket.on('connect', () => {
-            console.log('Connected to WebSocket');
-          });
-
-    }
 
 
     //HOST
