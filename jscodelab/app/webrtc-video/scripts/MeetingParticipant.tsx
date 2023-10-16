@@ -183,7 +183,7 @@ export default class MeetingParticipant implements iMeetingParticipantsConfig{
         })
 
         console.log(audioTrack,videoTrack)
-       this.onBothConnected && this.onBothConnected(audioTrack?.sender.track as MediaStreamTrack,videoTrack?.sender.track as MediaStreamTrack)
+       this.onBothConnected && this.onBothConnected(audioTrack?.receiver.track as MediaStreamTrack,videoTrack?.receiver.track as MediaStreamTrack)
     }
 
 
