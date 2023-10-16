@@ -130,17 +130,11 @@ export default function PreStartVideoPreview() {
        
     }
 
-    const onSaveJoiningPeerSDP = () => {
-        //gets the peer sdp from the text area and sets it to the peer remote connection
-        const peerSDP = JSON.parse(peerSDPText as string)
-        console.log("Accepting peer SDP")
-        host?.acceptJoinRequest(peerSDP as RTCSessionDescriptionInit,"Peer")
-    }
-
 
 
     //JOINER
      const JoinPeerToPeer = (joinedRoomName:string,sdp:String,peerName:String) => {
+        roomName = joinedRoomName
         console.log("Joining peer to peer")
         isHost = false;
         joiner = new MeetingJoiner({
@@ -150,17 +144,30 @@ export default function PreStartVideoPreview() {
             onConnectionChange:onJoinerConnectionChange,
             audioStream:audioStream as MediaStream,
             videoStream:videoStream as MediaStream,
-            onAnswer:onAnswer,
+            onJoined:onJoined,
             onBothConnected:onBothConnected
         })
         joiner.join(JSON.parse(sdp as string),peerName as string)
+        
+     }
+
+    const onJoinerConnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
+        setError(undefined)
+        playDing();
+        joinerSDPText = JSON.stringify(peerConnection.localDescription)
+       // setPeerSDPText(joinerSDPText as string)
+    }
+
+    const onJoined = (answerSDP:any, peerConnection: RTCPeerConnection,peerName:string) => {
+        joinerSDPText = JSON.stringify(peerConnection.localDescription)
+       // setPeerSDPText(joinerSDPText as string)
         //update room details with guest_sdp_text and guest name
         let url = apiURL+"/room/join"
         console.log(peerName)
         let data = {
-            room_name:joinedRoomName,
+            room_name:roomName,
             guest:peerName,
-            guest_sdp_text:sdp,
+            guest_sdp_text:JSON.stringify(answerSDP),
             
         }
         fetch(url,{
@@ -181,27 +188,14 @@ export default function PreStartVideoPreview() {
             setError("Unable to update room details")
         })
         setIsStarted(true);
-     }
-
-    const onJoinerConnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
-        setError(undefined)
-        playDing();
-        joinerSDPText = JSON.stringify(peerConnection.localDescription)
-        setPeerSDPText(joinerSDPText as string)
     }
-
     const onJoinerDisconnect = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection|undefined) => {
 
     }
     const onJoinerConnectionChange = (event:RTCPeerConnectionIceEvent,peerConnection:RTCPeerConnection) => {
         console.log("JOINER CONNECTION CHANGED. Update SDP")
         joinerSDPText = JSON.stringify(peerConnection.localDescription)
-        setPeerSDPText(joinerSDPText as string)
-    }
-
-    const onAnswer = (answerSDP:any, peerConnection: RTCPeerConnection) => {
-        joinerSDPText = JSON.stringify(peerConnection.localDescription)
-        setPeerSDPText(joinerSDPText as string)
+       // setPeerSDPText(joinerSDPText as string)
     }
 
     const playDing = () => {
@@ -213,6 +207,7 @@ export default function PreStartVideoPreview() {
 
     //ON BOTH CONNECTED EVENTS
     const onBothConnected = (audioTrack: MediaStreamTrack, videoTrack: MediaStreamTrack) => {
+        console.log(videoStream,audioStream)
         console.log("Both connected");
         //add the tracks to the audio and video element
         let peerVideo = document.getElementById("peerVideo") as HTMLVideoElement
