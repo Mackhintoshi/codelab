@@ -167,7 +167,7 @@ export default class MeetingParticipant implements iMeetingParticipantsConfig{
         //tracks attached are different if the participant is a host or joiner
         if(this.participant === Participant.HOST){
             tracks = tracks?.filter((track) => {
-                return track.sender.track?.kind === 'audio' || track.sender.track?.kind === 'video'
+                return track.receiver.track?.kind === 'audio' || track.receiver.track?.kind === 'video'
             })
         }else if(this.participant === Participant.JOINER){
             console.log(tracks)
