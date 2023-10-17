@@ -166,24 +166,10 @@ export default class MeetingParticipant implements iMeetingParticipantsConfig{
         let tracks = this.peerConnection?.getTransceivers();
         //tracks attached are different if the participant is a host or joiner
         if(this.participant === Participant.HOST){
-            tracks = tracks?.filter((track) => {
-                return track.receiver.track?.kind === 'audio' || track.receiver.track?.kind === 'video'
-            })
+            this.onBothConnected && this.onBothConnected(tracks![0].sender.track as MediaStreamTrack,tracks![1].sender.track as MediaStreamTrack)
         }else if(this.participant === Participant.JOINER){
-            console.log(tracks)
-            tracks = tracks?.filter((track) => {
-                return track.receiver.track?.kind === 'audio' || track.receiver.track?.kind === 'video'
-            })
+            this.onBothConnected && this.onBothConnected(tracks![1].receiver.track as MediaStreamTrack,tracks![0].receiver.track as MediaStreamTrack)
         }
-        const audioTrack = tracks?.find((track) => {
-            return track.receiver.track?.kind === 'audio'
-        })
-        const videoTrack = tracks?.find((track) => {
-            return track.receiver.track?.kind === 'video'
-        })
-
-        console.log(audioTrack,videoTrack)
-       this.onBothConnected && this.onBothConnected(audioTrack?.sender.track as MediaStreamTrack,videoTrack?.sender.track as MediaStreamTrack)
     }
 
 
