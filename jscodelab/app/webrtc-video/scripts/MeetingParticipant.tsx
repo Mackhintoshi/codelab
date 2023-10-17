@@ -169,7 +169,7 @@ export default class MeetingParticipant implements iMeetingParticipantsConfig{
         if(this.participant === Participant.HOST){
             this.onBothConnected && this.onBothConnected(tracks![0].receiver.track as MediaStreamTrack,tracks![1].receiver.track as MediaStreamTrack)
         }else if(this.participant === Participant.JOINER){
-            this.onBothConnected && this.onBothConnected(tracks![1].sender.track as MediaStreamTrack,tracks![0].sender.track as MediaStreamTrack)
+            this.onBothConnected && this.onBothConnected(tracks![0].receiver.track as MediaStreamTrack,tracks![1].receiver.track as MediaStreamTrack)
         }
     }
 
