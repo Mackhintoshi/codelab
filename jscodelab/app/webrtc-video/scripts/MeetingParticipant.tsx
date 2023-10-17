@@ -164,11 +164,12 @@ export default class MeetingParticipant implements iMeetingParticipantsConfig{
         //send message to both participants that they are connected
         //get the tracks for both audio and video and send it to the instance
         let tracks = this.peerConnection?.getTransceivers();
+        console.log(tracks)
         //tracks attached are different if the participant is a host or joiner
         if(this.participant === Participant.HOST){
-            this.onBothConnected && this.onBothConnected(tracks![0].sender.track as MediaStreamTrack,tracks![1].sender.track as MediaStreamTrack)
+            this.onBothConnected && this.onBothConnected(tracks![0].receiver.track as MediaStreamTrack,tracks![1].receiver.track as MediaStreamTrack)
         }else if(this.participant === Participant.JOINER){
-            this.onBothConnected && this.onBothConnected(tracks![1].receiver.track as MediaStreamTrack,tracks![0].receiver.track as MediaStreamTrack)
+            this.onBothConnected && this.onBothConnected(tracks![1].sender.track as MediaStreamTrack,tracks![0].sender.track as MediaStreamTrack)
         }
     }
 
