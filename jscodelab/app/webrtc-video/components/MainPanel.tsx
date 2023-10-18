@@ -10,6 +10,7 @@ import MeetingHost from "../scripts/meetingHost";
 import MeetingJoiner from "../scripts/MeetingJoiner";
 import io from 'socket.io-client';
 import { Socket } from "socket.io-client";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const apiURL = process.env.NEXT_PUBLIC_API_URL
 
@@ -22,7 +23,7 @@ let joinerSDPText:string|undefined = undefined
 let roomName:string|undefined = undefined
 let socket:Socket|undefined = undefined
 
-export default function PreStartVideoPreview() {
+export default function MainPanel() {
     const [isVideoEnabled, setIsVideoEnabled] = useState(false)
     const [videoStream, setVideoStream] = useState<MediaStream|undefined>(undefined)
     const [isAudioEnabled, setIsAudioEnabled] = useState(false)
@@ -325,7 +326,7 @@ export default function PreStartVideoPreview() {
                 >
                 <div className="flex w-full items-center justify-center bg-black"
                 style={{
-                    height: "50vh",
+                    height: "40vh",
                 }}
                 >
                     <video autoPlay
@@ -339,7 +340,7 @@ export default function PreStartVideoPreview() {
                 >
                 <div className="flex w-full items-center justify-center bg-black"
                 style={{
-                    height: "50vh",
+                    height: "40vh",
                 }}
                 >
                     <video autoPlay
@@ -394,19 +395,39 @@ export default function PreStartVideoPreview() {
             </div>
             
 
-            <div className="grid w-full grid-cols-1 justify-between gap-6 bg-white py-10 align-middle ">
+            <div className="grid w-full grid-cols-1 justify-between gap-2 py-10 align-middle ">
                 {
                     !isStarted?
                     <>
-                        <div className="flex flex-col justify-center gap-6 text-center">
+                     <div className="flex flex-col items-center gap-6 text-center">
                             <Button onClick={onStartHosting}
                             className="w-1/2 border-2 border-green-400 bg-white text-green-500 hover:bg-green-600 hover:text-white"
                             >Start Peer to Peer</Button>
                         </div>
-                        <div className="flex flex-col justify-center gap-6 text-center ">
+                        <p className="text-center text-gray-500">OR</p>
+                        <div className="flex flex-col items-center gap-6 text-center ">
                             <JoinMeetingModal onJoinMeeting={JoinPeerToPeer}
                                videoStream={videoStream} audioStream={audioStream} onError={(e)=>{setError(e as string)}}/>
                         </div>
+                    <Card className="">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <p className="text-lg font-bold">Note</p>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-primary">
+                                This is a simple demo. It is not a production ready application, thus it is not secure.
+                            </p>
+                            <p className="text-primary font-bold">
+                            Missing Feature:
+                            </p>
+                            <ul className="text-primary ">
+                                <li>Use Websockets to send SDP information. For now, manually click the refresh button to get the SDP information.</li>
+                            </ul>
+                        </CardContent>
+                    </Card>
+                       
                     </>:<></>
                 }
                 

@@ -10,8 +10,8 @@ export const siteConfig = {
       href: "/",
     },
     {
-      title:"Webrtc-video",
-      href:"/webrtc-video"
+      title:"LinkedIn",
+      href:"https://www.linkedin.com/in/jerick-gutierrez-9a149a144"
     }
   ],
   links: {
