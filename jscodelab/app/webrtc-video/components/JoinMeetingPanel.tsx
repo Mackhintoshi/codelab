@@ -60,7 +60,9 @@ export default function JoinMeetingModal(props:JoinMeetingPanelProps){
     return (
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white">Join Peer to Peer</Button>
+            <Button variant="outline" className=" h-12 text-lg font-bold border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white
+             dark:border-blue-500 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600 dark:hover:text-white
+            ">Join Peer to Peer</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>

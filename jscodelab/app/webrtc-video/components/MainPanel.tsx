@@ -401,10 +401,12 @@ export default function MainPanel() {
                     <>
                      <div className="flex flex-col items-center gap-6 text-center">
                             <Button onClick={onStartHosting}
-                            className="w-1/2 border-2 border-green-400 bg-white text-green-500 hover:bg-green-600 hover:text-white"
+                            className=" h-12 text-lg font-bold
+                             border-2 border-green-400 bg-white text-green-500 hover:bg-green-600 hover:text-white
+                            dark:border-green-500 dark:bg-green-500 dark:text-white dark:hover:bg-green-600 dark:hover:text-white"
                             >Start Peer to Peer</Button>
                         </div>
-                        <p className="text-center text-gray-500">OR</p>
+                        <p className="text-center">OR</p>
                         <div className="flex flex-col items-center gap-6 text-center ">
                             <JoinMeetingModal onJoinMeeting={JoinPeerToPeer}
                                videoStream={videoStream} audioStream={audioStream} onError={(e)=>{setError(e as string)}}/>
@@ -443,7 +445,8 @@ export default function MainPanel() {
                     { isUserHost?
                         <>
                          <Button
-                            className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white"
+                            className="w-1/2 border-2 border-blue-400 bg-white text-blue-500 hover:bg-blue-600 hover:text-white
+                            dark:border-blue-500 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600 dark:hover:text-white"
                             onClick={()=>{
                                 getJoinerSDP()
                             }}>Refresh</Button>

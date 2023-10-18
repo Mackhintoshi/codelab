@@ -15,6 +15,6 @@ export const siteConfig = {
     }
   ],
   links: {
-    github: "https://github.com/Mackhintoshi/codelab",
+    github: "https://github.com/Mackhintoshi",
   },
 }
