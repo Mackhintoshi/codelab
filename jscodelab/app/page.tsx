@@ -36,8 +36,8 @@ export default function IndexPage() {
       </div>
       <div className="grid grid-cols-1 items-start gap-2 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3
       ">
-        {projects.map((project) => (
-            <Card className="hover:shadow-primary cursor-pointer">
+        {projects.map((project,index) => (
+            <Card className="hover:shadow-primary cursor-pointer" key={index}>
               <CardHeader className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Image src={project.icon}
