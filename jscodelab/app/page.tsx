@@ -22,6 +22,12 @@ const projects = [
     url: "https://github.com/Mackhintoshi/Flask-Protobuf",
     icon: "/flask-icon.png",
   },
+  {
+    title: "Girl Band News App",
+    description: "his app allows you to access latest news about Blackpink from different sources, Choose your bias, Track how we are achieving our goals as Blinks. i.e How many views do we need to achieve? ,A simple plain screen that can be used on concerts if you do not have blink lights.",
+    url: "https://play.google.com/store/apps/details?id=com.the_black_pink_app&pli=1",
+    icon: "/blinkApp.png",
+  }
 ]
 
 export default function IndexPage() {
