@@ -24,7 +24,7 @@ const projects = [
   },
   {
     title: "Girl Band News App",
-    description: "his app allows you to access latest news about Blackpink from different sources, Choose your bias, Track how we are achieving our goals as Blinks. i.e How many views do we need to achieve? ,A simple plain screen that can be used on concerts if you do not have blink lights.",
+    description: "This app allows you to access latest news about Blackpink from different sources, Choose your bias, Track how we are achieving our goals as Blinks. i.e How many views do we need to achieve? ,A simple plain screen that can be used on concerts if you do not have blink lights.",
     url: "https://play.google.com/store/apps/details?id=com.the_black_pink_app&pli=1",
     icon: "/blinkApp.png",
   }
@@ -48,7 +48,7 @@ export default function IndexPage() {
                 <div className="flex items-center gap-2">
                   <Image src={project.icon}
                   className="rounded-full text-justify"
-                  width={32} height={32} alt="WebRTC"/>
+                  width={100} height={100} alt="projectLogo"/>
                   <h2 className="text-xl font-bold">{project.title}</h2>
                 </div>
               </CardHeader>
