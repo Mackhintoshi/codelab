@@ -25,7 +25,7 @@ const projects = [
   {
     title: "AI Interview Chatbot",
     description: "(took the backend down for now) An AI Interview Coach, that helps you practice your interview skill. The app is built in NextJS and uses a Flask with Redis. It integrates with ChatGPT to provide a chatbot experience.",
-    url: "#",
+    url: "https://reertalk.vercel.app/",
     icon: "/botIcon250.png",
   },
   
