@@ -12,8 +12,8 @@ const projects = [
   },
   {
     title: "AI Interview Chatbot",
-    description: "An AI Interview Coach, that helps you practice your interview skill. The app is built in NextJS and uses a Flask with Redis. It integrates with ChatGPT to provide a chatbot experience.",
-    url: "https://reertalk.com/",
+    description: "(took this app down) An AI Interview Coach, that helps you practice your interview skill. The app is built in NextJS and uses a Flask with Redis. It integrates with ChatGPT to provide a chatbot experience.",
+    url: "#",
     icon: "/botIcon250.png",
   },
   {
@@ -24,9 +24,15 @@ const projects = [
   },
   {
     title: "Girl Band News App",
-    description: "This app allows you to access latest news about Blackpink from different sources, Choose your bias, Track how we are achieving our goals as Blinks. i.e How many views do we need to achieve? ,A simple plain screen that can be used on concerts if you do not have blink lights.",
+    description: "(took this app down) This app allows you to access latest news about Blackpink from different sources, Choose your bias, Track how we are achieving our goals as Blinks. i.e How many views do we need to achieve? ,A simple plain screen that can be used on concerts if you do not have blink lights.",
     url: "https://play.google.com/store/apps/details?id=com.the_black_pink_app&pli=1",
     icon: "/blinkApp.png",
+  },
+  {
+    title: "Event Planning App",
+    description: "An AI assistant event planner with one stop shop marketplace for events. This uses Dart for front end, and uses Python for backend, plus some PHP.",
+    url: "https://play.google.com/store/apps/details?id=com.the_black_pink_app&pli=1",
+    icon: "/tierez.png",
   }
 ]
 
